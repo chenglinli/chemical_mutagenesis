@@ -1,0 +1,531 @@
+# V3.0
+# Condiser variants with more than two alternative alleles
+
+# Check required packages, and install them if they are missing.
+if (!require("Rsamtools")) {
+    source("https://bioconductor.org/biocLite.R")
+    biocLite("Rsamtools")
+}
+if (!require("seqinr")) install.packages("seqinr")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("reshape2")) install.packages("reshape2")
+if (!require("tidyr")) install.packages("tidyr")
+if (!require("stringr")) install.packages("stringr")
+
+
+indel_chr2 <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL, mutant_strain = NULL,
+                read_depth = 5, var_thld = 0.2, ref_thld = 0.8, freq_diff= 0.4){
+    for(rd in read_depth){
+        read_depth = rd
+        
+        # input_file: file path of the vcf file (e.g. input_file = "./test.vcf")
+        # parental_strain: the name of the parental strain. The name should not contain -. (e.g. parental_strain = "par")
+        # mutant_strain: please use a prefix to name mutant strains. Specify the common prefix here
+        ## (e.g. mutant_strain = "mut" given mutant strains named as mut1, mut2, etc.)
+        # read_depth: at a given variant, the read depth (coverage) must be >= read_depth. Default value = 5.
+        # var_thld: if the reference allele was detected in <= var_thld (default value = 0.2) of the reads, it is considered as having a variant allele.
+        # ref_thld: if the reference allele was detected in >= ref_thld (default value = 0.8) of the reads, it is considered as having a reference allele.
+        # freq_diff:  at a given variant, the porportion of reads supports the reference allele in the parental and 
+        ## the mutant strain should differ >= freq_diff (default value = 0.8).
+        
+        StartTime = Sys.time()
+        
+        library("Rsamtools") # GRanges
+        library("dplyr")
+        library("reshape2")
+        library("seqinr")
+        library("tidyr")
+        library("stringr")
+        # Check input parameters
+        if(is.null(input_file)) {print("Please specify the path of input_file")}
+        if(is.null(parental_strain)) {"Please specify the name of the parental strain"}
+        if(is.null(mutant_strain)) {"Please specify the name of the mutant strains"}
+        
+        # The first column in the vcf file is named "#CHROM". The hashtag(#) should be removed.
+        ## the new vcf is saved as xxx_edited.tab
+        input_file_edited = paste(input_file,"_edited.tab",sep="")
+        if(file.exists(input_file_edited)) {
+            vcf_ <- read.table(input_file_edited, header = T, sep = "\t", stringsAsFactors = F)
+            print("Load edited vcf file")
+        } else {
+            vcf_ <- readLines(input_file) # Read the vcf file
+            pos_ <- grep("#CHROM",vcf_) # Find the column contains "#CHROM"
+            if (length(pos_) != 0) {
+                vcf_[pos_] <- sub(pattern = "#CHROM", replacement = "CHROM", vcf_[pos_])
+            } else {print("Header had been edited.")}
+            
+            vcf_edit <- paste(input_file,"_edited.tab",sep="") # Name of edited vcf file
+            write.table(vcf_, vcf_edit, sep="\t", quote = F, row.names=F, col.names = F) 
+            vcf_ <- read.table(vcf_edit, header = T, sep = "\t", stringsAsFactors = F)
+        }
+        
+        # Create directory that contains the output files
+        out_dir = paste(input_file,as.character(read_depth), sep="_")
+        dir.create(out_dir)
+        print(paste("Results will be written to :", out_dir, sep=""))
+        
+        # Names of strains
+        parental_strain = as.character(parental_strain) # Parental strain
+        mutant_strain = as.character(mutant_strain)  # Mutant strain
+        # Vectors contain the name of the parental strain or all mutant strains
+        names_mut <- grep(mutant_strain, colnames(vcf_), value = T) # Names of the mutant strains
+        if(length(names_mut)==0){stop("check the name of the mutant strains")}
+        names_par <- grep(parental_strain, colnames(vcf_), value = T) # Names of parental strain
+        if(length(names_par)==0){stop("check the name of the parental strains")}
+        names_all <- c(names_par,names_mut) # A vector contains names of all strains
+        
+        # Load the gene position data, which contains the details of each gene (chromosome, gene_start, gene_stop and strand).
+        dd_gene_pos <- read.table(paste(ref_file,"gene_09-26-2015.txt",sep=""), sep="\t", header=T, stringsAsFactors = FALSE)
+        dd_gene_pos <- dd_gene_pos[grep("DDB_G", dd_gene_pos$ddb_g),]
+        dd_gr <- GenomicRanges::GRanges(dd_gene_pos$chromosome, IRanges(start = dd_gene_pos$start, end = dd_gene_pos$end))
+        
+        # write information to the summary.txt
+        write(paste("input_file =", input_file),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        write(paste("parental_strain =",parental_strain),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        write(paste("mutant_strain =",mutant_strain),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        write(paste("freq_diff =",freq_diff),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        write(paste("read_depth =",read_depth),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        write(paste("var_thld = ",var_thld),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        write(paste("ref_thld = ",ref_thld),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        write("", paste(out_dir, "/", "summary.txt",sep=""), append=T)
+        
+        
+        # FILTER 1: if the genetype of a given variant in the parental strain has missing values ("."), remove the variant
+        print(paste(dim(vcf_)[1], ": total number of variant sites before filtering", sep=""))
+        write(paste(dim(vcf_)[1], ": total number of variant sites before filtering", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        
+        gt_missing <- "\\."
+        vcf_filter1 <- vcf_
+        gt_missing_l <- grepl(pattern = gt_missing, vcf_filter1[,names_par]) # Logical vector of where the parental genotype is missing
+        vcf_filter1 <- vcf_filter1[!gt_missing_l,] # Remove variants in which the genotype of the parental strain are missing
+        
+        print(paste(dim(vcf_filter1)[1], ": remaining variants after removing sites where the parental strain has no read (filter 1).", sep=""))
+        write(paste(dim(vcf_filter1)[1], ": remaining variants after removing sites where the parental strain has no read (filter 1).", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        
+        
+        # FILTER 2 : genotype filter
+        # Allowed genotypes : "0/0", "0/1", "1/1".  Rows with genotypes of "1/2","2/3"... were saved to snp_fail_filter2.txt.
+        gt_ <- "\\./\\.|0/0|0/1|1/1"
+        gt_l <- logical(length = dim(vcf_filter1)[1])
+        for(n_ in names_all){
+            gt_tmp <- grepl(pattern = gt_, vcf_filter1[, n_]) # Logical vector where the genotype is missing in the parental strain
+            gt_l <- gt_l + gt_tmp
+        }
+        gt_l <- gt_l == length(names_all)
+        
+        # variants with than two alternative alleles
+        alt <- grepl(",",vcf_filter1$ALT)
+        
+        vcf_filter2 <- vcf_filter1[(gt_l&!alt),]
+        vcf_filter2_fail <- vcf_filter1[!gt_l|alt,]
+        
+        print(paste(dim(vcf_filter2)[1], ": remaining variants after filter 2 (genotype filter).", sep=""))
+        write(paste(dim(vcf_filter2)[1], ": remaining variants after filter 2 (genotype filter). Allowed genotypes : ., 0, 1.", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        
+        # variants with one alternative allele
+        vcf_filter2_split <- dplyr::select(vcf_filter2, CHROM:INFO) # create a data frame with columns from CHROM to INFO
+        # Extract the MQ and QD from the INFO column
+        vcf_filter2_split$INFO <- gsub("[a-zA-Z0-9;,\\.\\=\\-]+MQ=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.\\=\\-]+QD=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.\\=\\-]+",
+                                       "\\1;\\2", vcf_filter2_split$INFO)
+        vcf_filter2_split <- tidyr::separate(vcf_filter2_split,col = INFO, into=c("MQ","QD"),sep = ";",remove = T, fill = "right")
+        vcf_filter2_split$MQ <- as.numeric(vcf_filter2_split$MQ); vcf_filter2_split$MQ[is.na(vcf_filter2_split$MQ)]=0
+        vcf_filter2_split$QD <- as.numeric(vcf_filter2_split$QD); vcf_filter2_split$QD[is.na(vcf_filter2_split$QD)]=0
+        
+        #### variants with >= two alternative alleles
+        vcf_filter2_fail_split <- dplyr::select(vcf_filter2_fail, CHROM:INFO) # create a data frame with columns from CHROM to INFO
+        if(dim(vcf_filter2_fail_split)[1]>0){
+            if(max(str_count(vcf_filter2_fail_split$ALT,",")) == 1){ 
+                n_alt <- 2
+            } else if(max(nchar(vcf_filter2_fail_split$ALT)) == 2){
+                n_alt <- 3
+            } else { n_alt <- 3}
+            col_ <- c()
+            for(i in 1:n_alt){
+                col_ <- c(col_, paste("ALT",i,sep=""))
+            }
+        
+        vcf_filter2_fail_split <- tidyr::separate(vcf_filter2_fail_split, col = ALT, into = col_, sep = ",",remove = T, fill = "right")
+        # Extract the MQ and QD from the INFO column
+        vcf_filter2_fail_split$INFO <- gsub("[a-zA-Z0-9;,\\.\\=\\-]+MQ=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.=-]+QD=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.=-]+",
+                                            "\\1;\\2", vcf_filter2_fail_split$INFO)
+        vcf_filter2_fail_split <- tidyr::separate(vcf_filter2_fail_split,col = INFO, into=c("MQ","QD"),sep = ";",remove = T, fill = "right")
+        vcf_filter2_fail_split$MQ <- as.numeric(vcf_filter2_fail_split$MQ); vcf_filter2_fail_split$MQ[is.na(vcf_filter2_fail_split$MQ)]=0
+        vcf_filter2_fail_split$QD <- as.numeric(vcf_filter2_fail_split$QD); vcf_filter2_fail_split$QD[is.na(vcf_filter2_fail_split$QD)]=0
+        }
+        ####
+        
+        # Splitting the sample-specific information (GT:AD:DP:GQ:PL) into 8 columns ("GT","ref","alt","DP","GQ","PL_AA","PL_AB","PL_BB").
+        # Also calculate the proportion of reads that support the reference allele.
+        for(n_ in names_all){
+            # Split one column into eight columns
+            vcf_tmp <- reshape2::colsplit(vcf_filter2[,n_], ",|:",paste(n_, c("GT","ref","alt","DP","GQ","PL_AA","PL_AB","PL_BB"),sep="_"))
+            for(i in 2:8) {vcf_tmp[,i] <- as.numeric(vcf_tmp[,i])} # Turn columns into numeric
+            # Add a column calculating the frequency of the reference allele
+            ref_freq_n <- paste(n_,"_ref_freq",sep="") 
+            vcf_tmp[,ref_freq_n] <- vcf_tmp[,2]/vcf_tmp[,4] 
+            vcf_filter2_split <- cbind(vcf_filter2_split,vcf_tmp)
+        }
+        vcf_filter2_split[is.na(vcf_filter2_split)] = 0 # turn NA into 0
+        
+        #### variants with >= two alternative alleles
+        if(dim(vcf_filter2_fail_split)[1]>0){
+            for(n_ in names_all){
+                # Split one column into eight columns
+                vcf_tmp <- reshape2::colsplit(vcf_filter2_fail[,n_], ",|:",paste(n_, c("GT","ref",col_,"DP","GQ","PL_AA","PL_AB","PL_BB"),sep="_"))
+                for(i in 2:8) {vcf_tmp[,i] <- as.numeric(vcf_tmp[,i])} # Turn columns into numeric
+                # Add a column calculating the frequency of the reference allele
+                alt_freq_n <- paste(n_,"_",col_,"_freq",sep="")
+                alleles <- grep(paste(c("ref",col_), collapse = "|"), colnames(vcf_tmp), value = T)
+                alleles_freq <- vcf_tmp[,alleles]
+                alleles_freq$sum <- rowSums(alleles_freq)
+                vcf_tmp[,alt_freq_n] <- dplyr::select(alleles_freq/alleles_freq$sum, -contains("ref"), -sum)
+                vcf_filter2_fail_split <- cbind(vcf_filter2_fail_split,vcf_tmp)
+            }
+            vcf_filter2_fail_split[is.na(vcf_filter2_fail_split)] = 0 # turn NA into 0
+        }
+        ####
+        
+        # FILTER 3.1 : the proportion of reads support the reference allele at a given variant should be >= ref_thld or <= var_thld.
+        ref_freq <- dplyr::select(vcf_filter2_split, contains("ref_freq")) # columns of ref_freq
+        ref_freq_n <- colnames(ref_freq)
+        # All strains have freqency >= ref_thld (default=0.8) or frequency <= var_thld (default=0.2).
+        vcf_filter3_1 <- vcf_filter2_split[rowSums((ref_freq <= var_thld | ref_freq >= ref_thld | (ref_freq>=0.4 & ref_freq<=0.6))) == dim(ref_freq)[2],]
+        
+        print(paste(dim(vcf_filter3_1)[1], ": remaining variants after filter 3.1 (frequency filter).", sep=""))
+        write(paste(dim(vcf_filter3_1)[1], ": remaining variants after filter 3.1 (frequency filter)", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        
+        #### variants with >= two alternative alleles
+        if(dim(vcf_filter2_fail_split)[1]>0){
+            alt_freq <- dplyr::select(vcf_filter2_fail_split, contains("_freq")) # columns of ref_freq
+            alt_freq_n <- colnames(alt_freq)
+            # All strains have freqency >= ref_thld (default=0.8) or frequency <= var_thld (default=0.2).
+            vcf_filter2_fail_split <- vcf_filter2_fail_split[rowSums((alt_freq <= var_thld | alt_freq >= ref_thld)) == dim(alt_freq)[2],]
+        }
+        ####
+        
+        # FILTER 3.2 : a given variant is considered as positive if the following two conditions are both true
+        # 1) the porportion of reads supports the reference allele in the parental and the mutant strain should differ >= freq_diff (default value = 0.8).
+        # 2) Read depth of both mutant and parental should be equal or larger than read_depth (default value = 5)
+        freq_diff <- as.numeric(freq_diff) ; read_depth = as.numeric(read_depth)
+        vcf_filter3_2 <- c()
+        ref_freq <- dplyr::select(vcf_filter3_1, contains("ref_freq"))
+        ref_freq_par <- dplyr::select(ref_freq, contains(names_par)) # frequency of the reference allele in the parental strain
+        depth_ <- dplyr::select(vcf_filter3_1,contains("_DP"))
+        depth_par <- dplyr::select(depth_,contains(names_par)) # read depth in the parental strain
+        
+        for(n_ in names_mut){
+            ref_freq_tmp <- dplyr::select(ref_freq, contains(n_)) # frequency of the reference allele in a given mutant strain
+            depth_tmp <- dplyr::select(depth_,contains(n_)) # read depth in a given mutant strain
+            freq_diff_l <- abs(ref_freq_par - ref_freq_tmp) >= freq_diff & abs(ref_freq_par - ref_freq_tmp)<= 0.6 # the difference in allele frequency between the mutant and parental strains
+            read_depth_l <- depth_par >= read_depth & depth_tmp >= read_depth # the read depth threshold
+            pass_ <- freq_diff_l & read_depth_l # variants that pass both the frequency difference and read depth threshold
+            vcf_filter_tmp <- vcf_filter3_1[pass_,]
+            
+            if(dim(vcf_filter_tmp)[1] > 0) {
+                # Add a column with strain names
+                vcf_filter_tmp$strain_id <- n_
+                
+                # Annotate variants (find if variants are within an ORF)
+                variant_gr <- GRanges(vcf_filter_tmp$CHROM, IRanges(start = (vcf_filter_tmp$POS), end = (vcf_filter_tmp$POS)))
+                grange_ <- findOverlaps(variant_gr, dd_gr)
+                gr_variant_gr <- as.matrix(grange_)[,1]
+                gr_dd_gr <- as.matrix(grange_)[,2]
+                variant_orf <- cbind(vcf_filter_tmp[gr_variant_gr,], dplyr::select(dd_gene_pos[gr_dd_gr,], ddb_g:description, start:strand)) # Add gene information to the variants in a ORF
+                
+                # The rest of variants are in intergenic regions
+                if(length(grange_)>0) {
+                    variant_notorf <- vcf_filter_tmp[-gr_variant_gr,]
+                } else {variant_notorf <- vcf_filter_tmp}
+                # add NAs to gene information columns of variants in intergenic regions
+                if (dim(variant_notorf)[1] > 0) {
+                    variant_notorf$description = variant_notorf$genename = variant_notorf$ddb_g = variant_notorf$strand = variant_notorf$end = variant_notorf$start = NA
+                    vcf_filter_tmp <- rbind(variant_orf, variant_notorf)
+                } else { vcf_filter_tmp <- variant_orf }
+                
+                vcf_filter3_2 <- rbind(vcf_filter3_2, vcf_filter_tmp)
+                
+            } else { 
+                print(paste("No variant satisfies the filter 3.2 (freq_diff & read_depth filters) in: ", n_, sep="")) 
+                write(paste("No variant satisfies the filter 3.2 (freq_diff & read_depth filters) in: ", n_, sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)  	
+            }
+        }
+        print(paste(dim(vcf_filter3_2)[1], ": remaining variants after filter 3.2 (freq_diff & read_depth filters).", sep=""))
+        write(paste(dim(vcf_filter3_2)[1], ": remaining variants after filter 3.2 (freq_diff & read_depth filters).", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        
+        #### variants with >= two alternative alleles
+        vcf_multiple_alt <- c()
+        if(dim(vcf_filter2_fail_split)[1]>0){
+            alt_freq <- dplyr::select(vcf_filter2_fail_split, contains("_freq"))
+            alt_freq_par <- dplyr::select(alt_freq, contains(names_par)) # frequency of the reference allele in the parental strain
+            depth_ <- dplyr::select(vcf_filter2_fail_split,contains("_DP"))
+            depth_par <- dplyr::select(depth_,contains(names_par)) # read depth in the parental strain
+            
+            for(n_ in names_mut){
+                alt_freq_tmp <- dplyr::select(alt_freq, contains(n_)) # frequency of the reference allele in a given mutant strain
+                depth_tmp <- dplyr::select(depth_,contains(n_)) # read depth in a given mutant strain
+                freq_diff_l <- abs(as.matrix(alt_freq_par) - as.matrix(alt_freq_tmp)) >= freq_diff # the difference in allele frequency between the mutant and parental strains
+                freq_diff_l <- rowSums(freq_diff_l) == length(col_)
+                read_depth_l <- depth_par >= read_depth & depth_tmp >= read_depth # the read depth threshold
+                pass_ <- freq_diff_l & read_depth_l # variants that pass both the frequency difference and read depth threshold
+                vcf_filter_tmp <- vcf_filter2_fail_split[pass_,]
+                
+                if(dim(vcf_filter_tmp)[1] > 0) {
+                    # Add a column with strain names
+                    vcf_filter_tmp$strain_id <- n_
+                    
+                    # Annotate variants (find if variants are within an ORF)
+                    variant_gr <- GRanges(vcf_filter_tmp$CHROM, IRanges(start = (vcf_filter_tmp$POS), end = (vcf_filter_tmp$POS)))
+                    grange_ <- findOverlaps(variant_gr, dd_gr)
+                    gr_variant_gr <- as.matrix(grange_)[,1]
+                    gr_dd_gr <- as.matrix(grange_)[,2]
+                    variant_orf <- cbind(vcf_filter_tmp[gr_variant_gr,], dplyr::select(dd_gene_pos[gr_dd_gr,], ddb_g:description, start:strand)) # Add gene information to the variants in a ORF
+                    
+                    # The rest of variants are in intergenic regions
+                    if(length(grange_)>0) {
+                        variant_notorf <- vcf_filter_tmp[-gr_variant_gr,]
+                    } else {variant_notorf <- vcf_filter_tmp}
+                    # add NAs to gene information columns of variants in intergenic regions
+                    if (dim(variant_notorf)[1] > 0) {
+                        variant_notorf$description = variant_notorf$genename = variant_notorf$ddb_g = variant_notorf$strand = variant_notorf$end = variant_notorf$start = NA
+                        vcf_filter_tmp <- rbind(variant_orf, variant_notorf)
+                    } else { vcf_filter_tmp <- variant_orf }
+                }
+                vcf_multiple_alt <- rbind(vcf_multiple_alt, vcf_filter_tmp)
+            }    
+            
+            if(dim(vcf_multiple_alt)[1]>0){
+                vcf_multiple_alt <- dplyr::select(vcf_multiple_alt, CHROM:QD,strain_id:description)
+                write.table(vcf_multiple_alt, paste(out_dir,"/","variant_mult_alt.txt",sep=""), sep="\t", quote=F, row.names=F) 
+            } else {
+                vcf_multiple_alt <- dplyr::select(vcf_multiple_alt, CHROM:QD)
+                write.table(vcf_multiple_alt, paste(out_dir,"/","variant_mult_alt.txt",sep=""), sep="\t", quote=F, row.names=F) 
+            }
+        }
+        print(paste(dim(vcf_multiple_alt)[1], ": variants with multiple alternative alleles that pass filter 3.2 (freq_diff & read_depth filters).", sep=""))
+        write(paste(dim(vcf_multiple_alt)[1], ": variants with multiple alternative alleles that pass filter 3.2 (freq_diff & read_depth filters).", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        
+        ####
+        
+        if(is.null(vcf_filter3_2)){
+            write("No indel passes the filter 3.2 (freq_diff & read_depth filters)",paste(out_dir,"/","summary.txt",sep=""), append=T)
+        } else {
+            # ADDING ADDITIONAL INFORMATION ABOUT variants   
+            # Add the dna_change column (nucleotide change)
+            for( j in seq(dim(vcf_filter3_2)[1])){
+                vcf_filter3_2$dna_change[j] <- paste(vcf_filter3_2$REF[j], ">", vcf_filter3_2$ALT[j], sep="")
+            }
+            for( j in seq(dim(vcf_filter3_2)[1])){
+                if(nchar(vcf_filter3_2$REF[j]) > nchar(vcf_filter3_2$ALT[j])){
+                    vcf_filter3_2$indel[j] <- "deletion"
+                } else {vcf_filter3_2$indel[j] <- "insertion"}
+                
+            }
+            # Count the number of mutation events on each gene (count one for each of 
+            ## the variants on the same gene among all strains)
+            gene_list <- data.frame(genename = names(table(as.character(vcf_filter3_2$genename))))
+            gene_list$snp_occurrence <- as.integer(table(as.character(vcf_filter3_2$genename)))
+            if(dim(gene_list)[1]>0){
+                # Count the number of independent mutation sites of each gene  
+                var_count_tmp <- sapply(tapply(X = vcf_filter3_2$POS, INDEX = vcf_filter3_2$genename, FUN = unique), length)
+                var_count <- data.frame(genename = names(var_count_tmp))
+                var_count$var_count <- var_count_tmp
+                # The number of independent strains had mutations on each gene.
+                strain_count_tmp <- sapply(tapply(X = vcf_filter3_2$strain_id, INDEX = vcf_filter3_2$genename, FUN = unique), length)
+                strain_count <- data.frame(genename = names(strain_count_tmp))
+                strain_count$strain_count <- strain_count_tmp
+                # The number of the indels in each gene
+                indel_count_tmp <- table(X=vcf_filter3_2$indel, INDEX= vcf_filter3_2$genename)
+                indel_count <- data.frame(genename = colnames(indel_count_tmp))
+                indel_count$indel_count <- colSums(indel_count_tmp)
+                # Merge to the variant file 
+                gene_list_all <- merge(merge(merge(merge(dd_gene_pos, gene_list, by= "genename"), var_count, by = "genename"), strain_count, by = "genename"), indel_count, by = "genename")
+            }
+            # SAVE THE DATA FRAME INTO FILES
+            remov_ <- paste(parental_strain, "|", mutant_strain, sep = "")
+            remov_index <- grep(remov_, colnames(vcf_filter3_2))
+            var_filtered_concise <- vcf_filter3_2[,-remov_index]
+            
+            # ANNOTATING variants (MISENSE, NONSENSE, INTRONIC or INTERGENIC mutations)
+            dd_pri_cds <- seqinr::read.fasta(paste(ref_file,"dicty_primary_cds.txt",sep=""), set.attributes = F)
+            dd_gff <- read.table(paste(ref_file,"cds_09-26-2015.gff",sep=""), sep="\t", header=T)
+            dd_splice_d <- read.table(paste(ref_file,"splice_donor.gff",sep=""), sep="\t", header=T)
+            dd_sd <- GRanges(dd_splice_d$chromosome, IRanges(start = dd_splice_d$start, end = dd_splice_d$end))
+            dd_splice_a <- read.table(paste(ref_file,"splice_acceptor.gff",sep=""), sep="\t", header=T)
+            dd_sa <- GRanges(dd_splice_a$chromosome, IRanges(start = dd_splice_a$start, end = dd_splice_a$end))
+            
+            
+            # Annotating variants
+            codon_dna = codon_dna_mut = splice_variant = other_splice_variant = mutation =  c()
+            
+            for(i in seq(dim(var_filtered_concise)[1])){
+                
+                s_ <- var_filtered_concise[i,]
+                s_gr <- GRanges(s_$CHROM, IRanges(start = (s_$POS), end = (s_$POS)))
+                
+                ov_orf <- findOverlaps(dd_gr, s_gr) # Find if variant lies on a ORF
+                if (length(ov_orf) == 0) { # If the variant is not in any ORF
+                    splice_variant = c(splice_variant, NA)
+                    other_splice_variant = c(other_splice_variant, NA)
+                    mutation <- c(mutation, "intergenic")
+                }
+                else { # If the variant is in a ORF
+                    g_ <- as.character(dd_gene_pos[as.matrix(ov_orf)[1,1],]$ddb_g) # DDB_G gene name of the ORF
+                    pri_cds <- dd_pri_cds[grep(g_, names(dd_pri_cds))[1]] # use the first gene model if there are more than one alternative transcripts
+                    pri_cds_all <- dd_pri_cds[grep(g_, names(dd_pri_cds))]
+                    
+                    # a vector contains dictybase ID of other splice variants if there is any 
+                    if(length(pri_cds_all) > 1) {
+                        tmp_ = c()
+                        for(i in 2:length(pri_cds_all)) { 
+                            tmp_ <- c(tmp_, strsplit(names(pri_cds_all)[i], split = "\\|")[[1]][1])
+                        } 
+                        tmp_ <- paste(tmp_, collapse=";")
+                        other_splice_variant <- c(other_splice_variant, tmp_)
+                    } else if (length(pri_cds_all) == 1) {
+                        other_splice_variant <- c(other_splice_variant,  NA)
+                    } else { other_splice_variant <- c(other_splice_variant, NA) }
+                    
+                    # non-coding gene or pseudogene
+                    if(pri_cds == "NULL"){
+                        splice_variant = c(splice_variant, NA)
+                        mutation <- c(mutation, "NCG")
+                    } else {
+                        splice_id <- strsplit(names(pri_cds),split = "\\|")[[1]][1] # dictybase ID of the first splice variant
+                        cds_ <- dd_gff[grepl(splice_id, dd_gff$attribute) & dd_gff$feature == "CDS",] # find CDS
+                        cds_gr <- GRanges(cds_$chr, IRanges(start = cds_$start, end = cds_$end))
+                        
+                        ov_cds <- findOverlaps(cds_gr, s_gr) # Find if variant lies on a CDS
+                        if (length(ov_cds) == 0) { # If the variant is not in a CDS
+                            
+                            ov_sd <- findOverlaps(dd_sd, s_gr) # splice donor
+                            ov_sa <- findOverlaps(dd_sa, s_gr) # splice acceptor
+                            
+                            if(length(ov_sd) > 0) {
+                                splice_variant = c(splice_variant, splice_id)
+                                mutation <- c(mutation, "splice_donor")
+                            } else if (length(ov_sa) > 0){
+                                splice_variant = c(splice_variant, splice_id) 
+                                mutation <- c(mutation, "splice_acceptor")
+                            } else {
+                                splice_variant = c(splice_variant, splice_id)
+                                mutation <- c(mutation, "intronic")
+                            }
+                        } else { # If the variant is in a CDS
+                            splice_variant = c(splice_variant, splice_id)
+                            mutation <- c(mutation, "exonic")
+                        }
+                    }
+                }
+            }
+            
+            var_filtered_concise$mutation <- mutation; var_filtered_concise$splice_variant <- splice_variant
+            var_filtered_concise$other_splice_variant <- other_splice_variant
+            
+            # Count the number of each mutation type of all strains
+            ins_m <- length(grep("insertion", var_filtered_concise$indel))
+            del_m <- length(grep("deletion", var_filtered_concise$indel))
+            
+            write("", paste(out_dir, "/", "summary.txt",sep=""), append=T)
+            write(paste("The number of insertion mutations: ",ins_m, sep=""), paste(out_dir, "/", "summary.txt",sep=""), append=T)
+            write(paste("The number of deletion mutations: ",del_m, sep=""), paste(out_dir, "/", "summary.txt",sep=""), append=T)
+            
+            # Count the number of each mutation type by strains
+            mut_list <- tapply(X = var_filtered_concise$strain_id, INDEX = var_filtered_concise$mutation, FUN = list)
+            mut_count <- lapply(mut_list, FUN = table)
+            mut_by_strain <- data.frame(strain_id = names_mut, stringsAsFactors = F)
+            for(i in names(mut_count)){
+                df_ <- data.frame(mut_count[i], stringsAsFactors = F); names(df_) <- c("strain_id",i)
+                mut_by_strain <- merge(mut_by_strain, df_, by = "strain_id", all = T)
+            }
+            mut_by_strain[is.na(mut_by_strain)] = 0
+            
+            # Check if any mutation type is absesnt, fill it with 0
+            mis_ <- setdiff(c(c("intergenic","intronic","splice_donor","splice_acceptor","exonic","NCG")),names(mut_by_strain))
+            if(length(mis_)>=1){
+                for(i in mis_){
+                    mut_by_strain[,i] <- 0   
+                }
+            }
+            mut_by_strain <- select(mut_by_strain, strain_id,intergenic,intronic,splice_donor,splice_acceptor,exonic,NCG)
+            mut_by_strain <- dplyr::mutate(mut_by_strain, total = (intergenic+intronic+splice_donor+splice_acceptor+exonic+NCG))
+            write.table(mut_by_strain, paste(out_dir,"/","mutations_by_strain.txt",sep=""), sep="\t", quote=F, row.names=F) 
+            
+            # Count the number of indels by strains
+            indel_list <- tapply(X = var_filtered_concise$strain_id, INDEX = var_filtered_concise$indel, FUN = list)
+            indel_count <- lapply(indel_list, FUN = table)
+            indel_by_strain <- data.frame(strain_id = names_mut, stringsAsFactors = F)
+            for(i in names(indel_count)){
+                df_ <- data.frame(indel_count[i], stringsAsFactors = F); names(df_) <- c("strain_id",i)
+                indel_by_strain <- merge(indel_by_strain, df_, by = "strain_id", all = T)
+            }
+            indel_by_strain[is.na(indel_by_strain)] = 0
+            
+            
+            # Count the number of variants by chromosome
+            chr_list <- tapply(X = var_filtered_concise$CHROM, INDEX = var_filtered_concise$mutation, FUN = list)
+            chr_count <- lapply(chr_list, table)
+            chr_mut <- data.frame(chromosome = c("chr1","chr2","chr3","chr4","chr5","chr6","chrM","chrR","chrBF","chr2F","chr3F"), stringsAsFactors = F)
+            for(i in names(chr_count)){
+                df_ <- data.frame(chr_count[i], stringsAsFactors = F); names(df_) <- c("chromosome",i)
+                chr_mut <- merge(chr_mut, df_, by = "chromosome", all = T)
+                # Check if any mutation type is absesnt, fill it with 0
+                mis_ <- setdiff(c("intergenic","intronic","splice_donor","splice_acceptor","exonic","NCG"),names(chr_count))
+                if(length(mis_)>=1){
+                    for(i in mis_){
+                        chr_mut[,i] <- 0   
+                    }
+                }
+                
+            }
+            chr_mut[is.na(chr_mut)] = 0
+            chr_mut <- dplyr::select(chr_mut, chromosome,intergenic,intronic,splice_donor,splice_acceptor,exonic,NCG)
+            chr_mut <- dplyr::mutate(chr_mut, total = (intergenic+intronic+splice_donor+splice_acceptor+exonic+NCG))
+            
+            write.table(chr_mut, paste(out_dir,"/","mutations_by_chr.txt",sep=""), sep="\t", quote=F, row.names=F) 
+            
+            if(dim(gene_list)[1]>0){
+                # List the strains that carry individual mutations
+                variant_by_gene = table(var_filtered_concise$genename,var_filtered_concise$strain_id)
+                variant_tb <- data.frame(genename=rownames(variant_by_gene), strain_id="NA", stringsAsFactors = F)
+                for(i in seq(dim(variant_by_gene)[1]) ){
+                    variant_tb$strain_id[i] <- paste(colnames(variant_by_gene)[variant_by_gene[i,]>0], collapse=",")
+                }
+                write.table(variant_tb, paste(out_dir,"/strain_by_gene.txt",sep=""), row.names = F, quote = F, sep = "\t")
+                
+                # Count number of exonic, intonic, splice donor, splice acceptor, intergenic, cds mutations of each gene
+                mut_list1 <- tapply(var_filtered_concise$genename,var_filtered_concise$mutation,list)
+                mut_list2 <- lapply(X = mut_list1, FUN = table)
+                mut_by_gene <- data.frame(genename = gene_list_all$genename, stringsAsFactors = F)
+                for(i in c('intronic','splice_donor','splice_acceptor',"exonic",'NCG')){
+                    df_ <- data.frame(mut_list2[i], stringsAsFactors = F)
+                    if(dim(df_)[1]>0){
+                        names(df_) <- c("genename",i)
+                        mut_by_gene <- merge(mut_by_gene, df_, by = "genename", all = T)
+                    }
+                }
+                # Check if any mutation type is absesnt, fill it with 0
+                mis_ <- setdiff(c('intronic','splice_donor','splice_acceptor',"exonic",'NCG'),colnames(mut_by_gene))
+                if(length(mis_)>=1){
+                    for(i in mis_){
+                        mut_by_gene[,i] <- 0   
+                    }
+                }
+                mut_by_gene[is.na(mut_by_gene)] = 0
+                gene_list_all = merge(gene_list_all,mut_by_gene, by="genename", all = T)
+                
+                # SAVE THE DATA FRAMES 
+                write.table(gene_list_all, paste(out_dir,"/","gene_list_all.txt",sep=""), sep="\t", quote=F, row.names=F)
+                gene_list_top <- dplyr::filter(gene_list_all, snp_occurrence>=2, var_count>=2, strain_count>=2,  indel_count>=2)
+                write.table(gene_list_top, paste(out_dir,"/","gene_list_top.txt",sep=""), sep="\t", quote=F, row.names=F)
+            } else { write("No mutation on gene",paste(out_dir,"/","summary.txt",sep=""), append=T)
+            }
+            write.table(var_filtered_concise, paste(out_dir,"/","variant_filtered.txt",sep=""), sep="\t", quote=F, row.names=F)
+        }    
+        EndTime = Sys.time()
+        print(EndTime-StartTime) # Running time
+        write("", paste(out_dir, "/", "summary.txt",sep=""), append=T)
+        write(paste("Start time = ", StartTime, sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        write(paste("End time = ", EndTime, sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        
+    }   
+}

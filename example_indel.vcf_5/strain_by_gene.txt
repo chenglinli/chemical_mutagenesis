@@ -1,0 +1,3 @@
+genename	strain_id
+DDB_G0274947	mutant05
+DDB_G0279263	mutant01
