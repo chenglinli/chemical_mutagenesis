@@ -115,8 +115,7 @@ mutations_by_chr.txt |  List mutations in individual chromosomes.
 mutations_by_strain.txt |  List mutations in individual strains.
 strain_by_gene.txt | List mutants that carrying mutations in individual genes.
 
-* summary.txt 
-The file should look like this:
+* The summary.txt looks like this:
 ```
 input_file = ...
 parental_strain = AX4
@@ -133,6 +132,34 @@ mutant_strain = mutant
 There are 88 SNVs before filtering. One SNVs did not pass the filters because it contains multiple alternative alleles. 42 SNVs pass all filters (36 SNVs are found in one mutant and 3 SNVs are found in two mutants, 36 + 3*2 = 42). The 42 SNVs are listed in the `variant_filtered.txt`. The results can be found in the folder `example_snv.vcf_5`.
 
 Similarly, you can apply the `indel.R` to filter and annotate the `example_indel.vcf`. The `example_indel.vcf` contains 90 indels but only 2 of them pass the filters. No variant with multiple alternative alleles are found. The results can be found in the folder `example_indel.vcf_5`.
+
+* In variant_filtered.txt, those colunms are:
+--- | --- 
+CHROM |	Chromosome location.
+POS |	Nucleotide position of the variant.
+REF |	Reference allele.
+ALT | Alternative allele.
+QUAL | Quality score. Not a useful value.
+MQ |	Mapping Quality: root mean square of the mapping quality of reads across all samples.
+QD |	Quality by Depth: variant confidence normalized by unfiltered depth of variant samples.
+Strain id	| The name of the chemically-mutagenized strain that carries the variant.
+DDB_G |	Dictybase gene ID.
+Genename	| Gene name.
+Description | Description of the gene.
+Start | The start position of the gene.
+End | The end position of the gene.
+Strand | The gene is located on forward(+) or reverse(-) strand. NA, not available.
+dna_change	codon_dna	codon_dna_mut	codon_freq	codon_freq_mut	codon_pro	codon_pro_mut	aa_pos	splice_variant	other_splice_variants	mutation
+
+REF codon	If the variant affects the coding DNA sequence, the DNA codon of the reference allele. NA, not available.
+ALT codon	If the variant affects the coding DNA sequence, the DNA codon of the alternative allele. NA, not available.
+REF a.a.	If the variant affects the coding DNA sequence, the amino acid of the reference allele. NA, not available.
+ALT a.a	If the variant affects the coding DNA sequence, the amino acid of the alternative allele. NA, not available.
+a.a. position	If the variant affects the coding DNA sequence, the amino acid position that was affected in the protein. NA, not available.
+Splice varant	The splice variant that was used for the annotation. NA, not available.
+Other splice variants	Alternative splice variants of the gene. NA, not available.
+Mutation	Types of the mutations: single nucleotide variants (missense, synonymous, nonsense, intronic, splice donor, splice acceptor, intergenic or NCG(non-coding gene)) or indels (insertion or deletion).
+
 
 ## Part III: Chromosome 2 duplication
 In the Part I & II, we treat the Dictyostelium genome exluding the chromosome 2 duplication as a haploidy. In Part III, we will do variant calling, filtering and annotation on chromosome 2 duplication region by considering it as a diploidy. All the steps are basically the same as the Part I & II. The differences are adding the arguments `-ploidy 2 -L chr2:2263132-3015703` during vairant calling and use the R scripts (`snv_chr2.R` and `indel_chr2.R`) for filtering and annotation.
