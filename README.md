@@ -98,11 +98,11 @@ chr6	773798	.	A	G	5181.7	.	AC=1...	GT:AD:DP:GQ:PL	0:68,0:68:99:0,2891	...
 
 The parental strain is the "AX4". Mutant strains is named "mutant01" to "mutant06". To filter and annotate the SNVs. You will run the following commands in R.
 ```
-source("/path_to_the_folder/example_snv.vcf")
-snv(input_file = "/path_to_the_folder/example_snv.vcf", ref_file = "/path_to_the_folder_of_reference_files/", parental_strain = "par", mutant_strain = "mutant")
+source("/path_to_the_folder/snv.R")
+snv(input_file = "/path_to_the_folder/example_snv.vcf", ref_file = "/path_to_the_folder_of_reference_files/", parental_strain = "AX4", mutant_strain = "mutant")
 ```
 
-The script creates a new folder `example_snv.vcf_5`. The suffix `5` indicates that the SNVs must be covered by >= 5 reads. You could change the threshold by adding the argument `read_depth = 5` in the function `snv()`. The script generates 8 files.
+The script creates a new folder `example_snv.vcf_5`. The suffix `5` indicates that SNVs with a coverage < 5 reads will be filtered out. You can change the threshold by adding the argument `read_depth = 5` in the function `snv()`. The script generates an output folder containing 8 files.
 
 **File name** | **Description** 
 --- | --- 
@@ -129,11 +129,11 @@ mutant_strain = mutant
 1: variants with multiple alternative alleles that pass filter 3.2 (freq_diff & read_depth filters).
 ...
 ```
-There are 88 SNVs before filtering. One SNVs did not pass the filters because it contains multiple alternative alleles. 42 SNVs pass all filters (36 SNVs are found in one mutant and 3 SNVs are found in two mutants, 36 + 3*2 = 42). The 42 SNVs are listed in the `variant_filtered.txt`. The results can be found in the folder `example_snv.vcf_5`.
+In brief, there are 88 SNVs before filtering. One SNVs did not pass the filters because it contains multiple alternative alleles. 42 SNVs pass all filters (36 SNVs are found in one mutant and 3 SNVs are found in two mutants, 36 + 3*2 = 42). The 42 SNVs are listed in the `variant_filtered.txt`. The results can be found in the folder `example_snv.vcf_5`.
 
 Similarly, you can apply the `indel.R` to filter and annotate the `example_indel.vcf`. The `example_indel.vcf` contains 90 indels but only 2 of them pass the filters. No variant with multiple alternative alleles are found. The results can be found in the folder `example_indel.vcf_5`.  
   
-In variant_filtered.txt, description of the columns can be found in the following table. The symbol **NA** means not available.  
+In the variant_filtered.txt, description of the columns can be found in the following table. The symbol **NA** in the file means a value is not available.  
 
 **Column name** | **Description**
 --- | ---   
