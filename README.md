@@ -133,7 +133,7 @@ There are 88 SNVs before filtering. One SNVs did not pass the filters because it
 
 Similarly, you can apply the `indel.R` to filter and annotate the `example_indel.vcf`. The `example_indel.vcf` contains 90 indels but only 2 of them pass the filters. No variant with multiple alternative alleles are found. The results can be found in the folder `example_indel.vcf_5`.
 
-* In variant_filtered.txt, those colunms mean:  
+* In variant_filtered.txt, description of the columns can be found in the following table. The symbol **NA** means not available.  
 
 **Column name** | **Description**
 --- | ---   
@@ -150,19 +150,18 @@ Genename	| Gene name.
 Description | Description of the gene.  
 Start | The start position of the gene.  
 End | The end position of the gene.  
-Strand | The gene is located on forward(+) or reverse(-) strand. NA, not available.  
-
-
-dna_change	codon_dna	codon_dna_mut	codon_freq	codon_freq_mut	codon_pro	codon_pro_mut	aa_pos	splice_variant	other_splice_variants	mutation
-
-REF codon	If the variant affects the coding DNA sequence, the DNA codon of the reference allele. NA, not available.
-ALT codon	If the variant affects the coding DNA sequence, the DNA codon of the alternative allele. NA, not available.
-REF a.a.	If the variant affects the coding DNA sequence, the amino acid of the reference allele. NA, not available.
-ALT a.a	If the variant affects the coding DNA sequence, the amino acid of the alternative allele. NA, not available.
-a.a. position	If the variant affects the coding DNA sequence, the amino acid position that was affected in the protein. NA, not available.
-Splice varant	The splice variant that was used for the annotation. NA, not available.
-Other splice variants	Alternative splice variants of the gene. NA, not available.
-Mutation	Types of the mutations: single nucleotide variants (missense, synonymous, nonsense, intronic, splice donor, splice acceptor, intergenic or NCG(non-coding gene)) or indels (insertion or deletion).
+Strand | The gene is located on forward(+) or reverse(-) strand. 
+dna_change | Alteration in the DNA sequence.
+codon_dna | DNA codon of the reference allele.
+codon_dna_mut | DNA codon of the mutant allele.
+codon_freq | Codon usage frequency of the reference DNA codon.
+codon_freq_mut | Codon usage frequency of the mutant DNA codon.
+codon_pro | Amino acid residue of the wildtype protein.
+codon_pro_mut | Amino acid residue of the mutant protein.
+aa_pos | Amino acid position where mutation occured.
+splice_variant | Sequence ID of the splice variant.
+other_splice_variants | Sequence ID of alternative splice variants.
+mutation | Mutation type. Intergenic,	intronic,	splice_donor,	splice_acceptor,	synonymous,	missense,	nonsense or	non-coding gene (NCG).
 
 
 ## Part III: Chromosome 2 duplication
