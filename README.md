@@ -1,5 +1,5 @@
 Authors: Cheng-Lin Frank Li (chenglil@bcm.edu, chenglinfli@gmail.com)  
-Date: October 20, 2015
+Date: January 7, 2016
 
 ## Introduction
 These scripts written in R are genetic variant annotation tools for _Dictyostelium_. It is designed for filtering and annotating a SNP calling output (.vcf file) by the GATK UnifiedGenotyper (version 3.4-46). The README file contains guidelines for 1) how to prepare the Variant Call Format (VCF) file and 2) examples of applying the scripts to VCF files. Be aware of that the tools are designed for the VCF file format version 4.1 and the format of the VCF file are subjected to changes. If you encounter any error, feel free to send me an email.
