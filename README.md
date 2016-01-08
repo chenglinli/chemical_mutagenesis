@@ -134,7 +134,7 @@ There are 88 SNVs before filtering. One SNVs did not pass the filters because it
 Similarly, you can apply the `indel.R` to filter and annotate the `example_indel.vcf`. The `example_indel.vcf` contains 90 indels but only 2 of them pass the filters. No variant with multiple alternative alleles are found. The results can be found in the folder `example_indel.vcf_5`.
 
 * In variant_filtered.txt, those colunms mean:  
---- | --- 
+--- | ---   
 CHROM |	Chromosome location.
 POS |	Nucleotide position of the variant.
 REF |	Reference allele.
