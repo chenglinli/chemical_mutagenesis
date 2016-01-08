@@ -113,9 +113,9 @@ gene_list_all.txt | Genes that are mutated.
 gene_list_top.txt | Genes that are mutated at least twice.
 mutations_by_chr.txt |  List mutations in individual chromosomes.
 mutations_by_strain.txt |  List mutations in individual strains.
-strain_by_gene.txt | List mutants that carrying mutations in individual genes.
-
-* The summary.txt looks like this:
+strain_by_gene.txt | List mutants that carrying mutations in individual genes.  
+  
+The summary.txt looks like this:
 ```
 input_file = ...
 parental_strain = AX4
@@ -131,9 +131,9 @@ mutant_strain = mutant
 ```
 There are 88 SNVs before filtering. One SNVs did not pass the filters because it contains multiple alternative alleles. 42 SNVs pass all filters (36 SNVs are found in one mutant and 3 SNVs are found in two mutants, 36 + 3*2 = 42). The 42 SNVs are listed in the `variant_filtered.txt`. The results can be found in the folder `example_snv.vcf_5`.
 
-Similarly, you can apply the `indel.R` to filter and annotate the `example_indel.vcf`. The `example_indel.vcf` contains 90 indels but only 2 of them pass the filters. No variant with multiple alternative alleles are found. The results can be found in the folder `example_indel.vcf_5`.
-
-* In variant_filtered.txt, description of the columns can be found in the following table. The symbol **NA** means not available.  
+Similarly, you can apply the `indel.R` to filter and annotate the `example_indel.vcf`. The `example_indel.vcf` contains 90 indels but only 2 of them pass the filters. No variant with multiple alternative alleles are found. The results can be found in the folder `example_indel.vcf_5`.  
+  
+In variant_filtered.txt, description of the columns can be found in the following table. The symbol **NA** means not available.  
 
 **Column name** | **Description**
 --- | ---   
