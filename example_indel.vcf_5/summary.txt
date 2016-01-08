@@ -21,5 +21,5 @@ No variant satisfies the filter 3.2 (freq_diff & read_depth filters) in: mutant0
 The number of insertion mutations: 0
 The number of deletion mutations: 2
 
-Start time = 2016-01-07 18:29:22
-End time = 2016-01-07 18:29:29
+Start time = 2016-01-07 18:55:54
+End time = 2016-01-07 18:56:02
