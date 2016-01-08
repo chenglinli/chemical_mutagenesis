@@ -135,20 +135,22 @@ Similarly, you can apply the `indel.R` to filter and annotate the `example_indel
 
 * In variant_filtered.txt, those colunms mean:  
 --- | ---   
-CHROM |	Chromosome location.
-POS |	Nucleotide position of the variant.
-REF |	Reference allele.
-ALT | Alternative allele.
-QUAL | Quality score. Not a useful value.
-MQ |	Mapping Quality: root mean square of the mapping quality of reads across all samples.
-QD |	Quality by Depth: variant confidence normalized by unfiltered depth of variant samples.
-Strain id	| The name of the chemically-mutagenized strain that carries the variant.
-DDB_G |	Dictybase gene ID.
-Genename	| Gene name.
-Description | Description of the gene.
-Start | The start position of the gene.
-End | The end position of the gene.
-Strand | The gene is located on forward(+) or reverse(-) strand. NA, not available.
+CHROM |	Chromosome location.  
+POS |	Nucleotide position of the variant.  
+REF |	Reference allele.  
+ALT | Alternative allele.  
+QUAL | Quality score. Not a useful value.  
+MQ |	Mapping Quality: root mean square of the mapping quality of reads across all samples.  
+QD |	Quality by Depth: variant confidence normalized by unfiltered depth of variant samples.  
+Strain id	| The name of the chemically-mutagenized strain that carries the variant.  
+DDB_G |	Dictybase gene ID.  
+Genename	| Gene name.  
+Description | Description of the gene.  
+Start | The start position of the gene.  
+End | The end position of the gene.  
+Strand | The gene is located on forward(+) or reverse(-) strand. NA, not available.  
+
+
 dna_change	codon_dna	codon_dna_mut	codon_freq	codon_freq_mut	codon_pro	codon_pro_mut	aa_pos	splice_variant	other_splice_variants	mutation
 
 REF codon	If the variant affects the coding DNA sequence, the DNA codon of the reference allele. NA, not available.
