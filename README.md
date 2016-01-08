@@ -25,13 +25,13 @@ strain03 | aggless | illumina | 2x100bp | mutant02
 As you might have noticed, the RGID and RGSM names must be unique for different samples. The strain01 is the parental strain, AX4. The strain02 and strain03 are chemically mutagenized strains that carry unknown mutations. The RGSM will be the column names of individual strains in the VCF file. Please name the RGSM of your mutant strains with a common prefix (e.g. “mutant” in this example). 
 
 **4. Variant calling**  
-Lastly, running the UnifiedGenotyper on multiple samples of the same experiment to generate a single VCF file (**Note1**). You will generate two VCF files for **SNVs** and **indels**, respectively, across the whole genome excluding the chromosome 2 duplication. Here are examples of the commands for running GATK in MAC OS X (v10.10.5). If you use other system or cloud server, make sure you have the same values for the two parameters (-stand_call_conf and -ploidy).  
+Lastly, running the UnifiedGenotyper on multiple samples of the same experiment to generate a single VCF file (**Note1**). You will generate two VCF files for **SNVs** and **indels**, respectively, across the whole genome excluding the chromosome 2 duplication. Here are examples of the commands for running GATK in MAC OS X (v10.10.5). If you use other system or cloud server, make sure you have the same values for the three parameters (-glm, -stand_call_conf and -ploidy).  
 **Note1**: Do not run separate variant calling on individual samples and combine the individual vcf files later.
 
 **The VCF file contain the single nucleotide variants (SNVs)**  
 Calling SNVs for a haploid genome. You will later use the `snv.R` to filter and annotate the VCF file.
 ```
-java -jar gatk_directory/GenomeAnalysisTK.jar -T UnifiedGenotyper -R reference_fasta_file -I input1.bam [-I input2.bam ...] -o snv.vcf -stand_call_conf 30 -ploidy 1
+java -jar gatk_directory/GenomeAnalysisTK.jar -T UnifiedGenotyper -glm SNP -R reference_fasta_file -I input1.bam [-I input2.bam ...] -o snv.vcf -stand_call_conf 30 -ploidy 1
 ```
 
 **The VCF file contain the indels**  
@@ -171,7 +171,7 @@ In the Part I & II, we treat the Dictyostelium genome exluding the chromosome 2 
 **The VCF file contains single nucleotide variants (SNVs) on the chromosome 2 duplication**  
 Calling SNVs for a diploid genome (There are two copies of each gene in the chromosome 2 duplication). You will later use the  `snv_chr2.R` to filter and annotate the VCF file.
 ```
-java -jar gatk_directory/GenomeAnalysisTK.jar -T UnifiedGenotyper -R reference_fasta_file -I input1.bam [-I input2.bam ...] -o snv_chr2.vcf -stand_call_conf 30 -ploidy 2 -L chr2:2263132-3015703
+java -jar gatk_directory/GenomeAnalysisTK.jar -T UnifiedGenotyper -glm SNP -R reference_fasta_file -I input1.bam [-I input2.bam ...] -o snv_chr2.vcf -stand_call_conf 30 -ploidy 2 -L chr2:2263132-3015703
 ```
 
 **The VCF file contains indels on the chromosome 2 duplication**  
