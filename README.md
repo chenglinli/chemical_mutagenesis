@@ -43,7 +43,7 @@ java -jar gatk_directory/GenomeAnalysisTK.jar -T UnifiedGenotyper -glm INDEL -R 
 ## Part II: Examples of applying the scripts to VCF files.
 
 **1. The reference files**  
-There are six reference files providing essential information for annotating variants. The reference files have to be placed in a given folder.
+There are six reference files providing essential information for annotating variants (download the `Reference_files.zip`).
 
 * gene_09-26-2015.txt  
 This file provides the gene model. It looks like this:
