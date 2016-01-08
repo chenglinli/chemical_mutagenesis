@@ -7,7 +7,8 @@ var_thld =  0.2
 ref_thld =  0.8
 
 90: total number of variant sites before filtering
-87: remaining variants after removing sites where the parental strain has no read (filter 1).
+89: number of variant sites that have one alternative allele
+86: remaining variants after removing sites where the parental strain has zero read coverage (filter 1).
 86: remaining variants after filter 2 (genotype filter). Allowed genotypes : ., 0, 1.
 67: remaining variants after filter 3.1 (frequency filter)
 No variant satisfies the filter 3.2 (freq_diff & read_depth filters) in: mutant02
@@ -20,5 +21,5 @@ No variant satisfies the filter 3.2 (freq_diff & read_depth filters) in: mutant0
 The number of insertion mutations: 0
 The number of deletion mutations: 2
 
-Start time = 2016-01-06 20:30:53
-End time = 2016-01-06 20:31:01
+Start time = 2016-01-07 18:29:22
+End time = 2016-01-07 18:29:29

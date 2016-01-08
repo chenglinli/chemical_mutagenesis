@@ -89,53 +89,30 @@ snv_chr2 <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL,
         write("", paste(out_dir, "/", "summary.txt",sep=""), append=T)
         
         
-        # FILTER 1: if the genetype of a given variant in the parental strain has missing values ("."), remove the variant
         print(paste(dim(vcf_)[1], ": total number of variant sites before filtering", sep=""))
         write(paste(dim(vcf_)[1], ": total number of variant sites before filtering", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
         
-        gt_missing <- "\\."
-        vcf_filter1 <- vcf_
-        gt_missing_l <- grepl(pattern = gt_missing, vcf_filter1[,names_par]) # Logical vector of where the parental genotype is missing
-        vcf_filter1 <- vcf_filter1[!gt_missing_l,] # Remove variants in which the genotype of the parental strain are missing
+        # variants with >= 2 alternative alleles were saved to variant_mult_alt.txt
+        alt <- grepl(",",vcf_$ALT)
         
-        print(paste(dim(vcf_filter1)[1], ": remaining variants after removing sites where the parental strain has no read (filter 1).", sep=""))
-        write(paste(dim(vcf_filter1)[1], ": remaining variants after removing sites where the parental strain has no read (filter 1).", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
-        
-        
-        # FILTER 2 : genotype filter
-        # Allowed genotypes : "0/0", "0/1", "1/1".  Rows with genotypes of "1/2","2/3"... were saved to snp_fail_filter2.txt.
-        gt_ <- "\\./\\.|0/0|0/1|1/1"
-        gt_l <- logical(length = dim(vcf_filter1)[1])
-        for(n_ in names_all){
-            gt_tmp <- grepl(pattern = gt_, vcf_filter1[, n_]) # Logical vector where the genotype is missing in the parental strain
-            gt_l <- gt_l + gt_tmp
-        }
-        gt_l <- gt_l == length(names_all)
-        
-        # variants with than two alternative alleles
-        alt <- grepl(",",vcf_filter1$ALT)
-        
-        vcf_filter2 <- vcf_filter1[(gt_l&!alt),]
-        vcf_filter2_fail <- vcf_filter1[!gt_l|alt,]
-        
-        print(paste(dim(vcf_filter2)[1], ": remaining variants after filter 2 (genotype filter).", sep=""))
-        write(paste(dim(vcf_filter2)[1], ": remaining variants after filter 2 (genotype filter). Allowed genotypes : ., 0, 1.", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        vcf_one_alt <- vcf_[(!alt),]
+        vcf_multi_alt <- vcf_[alt,]
         
         # variants with one alternative allele
-        vcf_filter2_split <- dplyr::select(vcf_filter2, CHROM:INFO) # create a data frame with columns from CHROM to INFO
+        vcf_split <- dplyr::select(vcf_one_alt, CHROM:INFO) # create a data frame with columns from CHROM to INFO
         # Extract the MQ and QD from the INFO column
-        vcf_filter2_split$INFO <- gsub("[a-zA-Z0-9;,\\.\\=\\-]+MQ=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.\\=\\-]+QD=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.\\=\\-]+",
-                                       "\\1;\\2", vcf_filter2_split$INFO)
-        vcf_filter2_split <- tidyr::separate(vcf_filter2_split,col = INFO, into=c("MQ","QD"),sep = ";",remove = T, fill = "right")
-        vcf_filter2_split$MQ <- as.numeric(vcf_filter2_split$MQ); vcf_filter2_split$MQ[is.na(vcf_filter2_split$MQ)]=0
-        vcf_filter2_split$QD <- as.numeric(vcf_filter2_split$QD); vcf_filter2_split$QD[is.na(vcf_filter2_split$QD)]=0
+        vcf_split$INFO <- gsub("[a-zA-Z0-9;,\\.\\=\\-]+MQ=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.\\=\\-]+QD=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.\\=\\-]+",
+                               "\\1;\\2", vcf_split$INFO)
+        vcf_split <- tidyr::separate(vcf_split,col = INFO, into=c("MQ","QD"),sep = ";",remove = T, fill = "right")
+        vcf_split$MQ <- as.numeric(vcf_split$MQ); vcf_split$MQ[is.na(vcf_split$MQ)]=0
+        vcf_split$QD <- as.numeric(vcf_split$QD); vcf_split$QD[is.na(vcf_split$QD)]=0
         
         #### variants with >= two alternative alleles
-        vcf_filter2_fail_split <- dplyr::select(vcf_filter2_fail, CHROM:INFO) # create a data frame with columns from CHROM to INFO
-        if(dim(vcf_filter2_fail_split)[1]>0){
-            if(max(str_count(vcf_filter2_fail_split$ALT,",")) == 1){ 
+        vcf_multi_alt_split <- dplyr::select(vcf_multi_alt, CHROM:INFO) # create a data frame with columns from CHROM to INFO
+        if(dim(vcf_multi_alt_split)[1]>0){
+            if(max(str_count(vcf_multi_alt_split$ALT,",")) == 1){ 
                 n_alt <- 2
-            } else if(max(nchar(vcf_filter2_fail_split$ALT)) == 2){
+            } else if(max(nchar(vcf_multi_alt_split$ALT)) == 2){
                 n_alt <- 3
             } else { n_alt <- 3}
             col_ <- c()
@@ -143,13 +120,13 @@ snv_chr2 <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL,
                 col_ <- c(col_, paste("ALT",i,sep=""))
             }
             
-            vcf_filter2_fail_split <- tidyr::separate(vcf_filter2_fail_split, col = ALT, into = col_, sep = ",",remove = T, fill = "right")
+            vcf_multi_alt_split <- tidyr::separate(vcf_multi_alt_split, col = ALT, into = col_, sep = ",",remove = T, fill = "right")
             # Extract the MQ and QD from the INFO column
-            vcf_filter2_fail_split$INFO <- gsub("[a-zA-Z0-9;,\\.\\=\\-]+MQ=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.=-]+QD=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.=-]+",
-                                                "\\1;\\2", vcf_filter2_fail_split$INFO)
-            vcf_filter2_fail_split <- tidyr::separate(vcf_filter2_fail_split,col = INFO, into=c("MQ","QD"),sep = ";",remove = T, fill = "right")
-            vcf_filter2_fail_split$MQ <- as.numeric(vcf_filter2_fail_split$MQ); vcf_filter2_fail_split$MQ[is.na(vcf_filter2_fail_split$MQ)]=0
-            vcf_filter2_fail_split$QD <- as.numeric(vcf_filter2_fail_split$QD); vcf_filter2_fail_split$QD[is.na(vcf_filter2_fail_split$QD)]=0
+            vcf_multi_alt_split$INFO <- gsub("[a-zA-Z0-9;,\\.\\=\\-]+MQ=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.=-]+QD=(\\d+\\.\\d+)[a-zA-Z0-9;,\\.=-]+",
+                                             "\\1;\\2", vcf_multi_alt_split$INFO)
+            vcf_multi_alt_split <- tidyr::separate(vcf_multi_alt_split,col = INFO, into=c("MQ","QD"),sep = ";",remove = T, fill = "right")
+            vcf_multi_alt_split$MQ <- as.numeric(vcf_multi_alt_split$MQ); vcf_multi_alt_split$MQ[is.na(vcf_multi_alt_split$MQ)]=0
+            vcf_multi_alt_split$QD <- as.numeric(vcf_multi_alt_split$QD); vcf_multi_alt_split$QD[is.na(vcf_multi_alt_split$QD)]=0
         }
         ####
         
@@ -157,20 +134,20 @@ snv_chr2 <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL,
         # Also calculate the proportion of reads that support the reference allele.
         for(n_ in names_all){
             # Split one column into eight columns
-            vcf_tmp <- reshape2::colsplit(vcf_filter2[,n_], ",|:",paste(n_, c("GT","ref","alt","DP","GQ","PL_AA","PL_AB","PL_BB"),sep="_"))
+            vcf_tmp <- reshape2::colsplit(vcf_one_alt[,n_], ",|:",paste(n_, c("GT","ref","alt","DP","GQ","PL_AA","PL_AB","PL_BB"),sep="_"))
             for(i in 2:8) {vcf_tmp[,i] <- as.numeric(vcf_tmp[,i])} # Turn columns into numeric
             # Add a column calculating the frequency of the reference allele
             ref_freq_n <- paste(n_,"_ref_freq",sep="") 
             vcf_tmp[,ref_freq_n] <- vcf_tmp[,2]/vcf_tmp[,4] 
-            vcf_filter2_split <- cbind(vcf_filter2_split,vcf_tmp)
+            vcf_split <- cbind(vcf_split,vcf_tmp)
         }
-        vcf_filter2_split[is.na(vcf_filter2_split)] = 0 # turn NA into 0
+        vcf_split[is.na(vcf_split)] = 0 # turn NA into 0
         
         #### variants with >= two alternative alleles
-        if(dim(vcf_filter2_fail_split)[1]>0){
+        if(dim(vcf_multi_alt_split)[1]>0){
             for(n_ in names_all){
                 # Split one column into eight columns
-                vcf_tmp <- reshape2::colsplit(vcf_filter2_fail[,n_], ",|:",paste(n_, c("GT","ref",col_,"DP","GQ","PL_AA","PL_AB","PL_BB"),sep="_"))
+                vcf_tmp <- reshape2::colsplit(vcf_multi_alt[,n_], ",|:",paste(n_, c("GT","ref",col_,"DP","GQ","PL_AA","PL_AB","PL_BB"),sep="_"))
                 for(i in 2:8) {vcf_tmp[,i] <- as.numeric(vcf_tmp[,i])} # Turn columns into numeric
                 # Add a column calculating the frequency of the reference allele
                 alt_freq_n <- paste(n_,"_",col_,"_freq",sep="")
@@ -178,27 +155,54 @@ snv_chr2 <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL,
                 alleles_freq <- vcf_tmp[,alleles]
                 alleles_freq$sum <- rowSums(alleles_freq)
                 vcf_tmp[,alt_freq_n] <- dplyr::select(alleles_freq/alleles_freq$sum, -contains("ref"), -sum)
-                vcf_filter2_fail_split <- cbind(vcf_filter2_fail_split,vcf_tmp)
+                vcf_multi_alt_split <- cbind(vcf_multi_alt_split,vcf_tmp)
             }
-            vcf_filter2_fail_split[is.na(vcf_filter2_fail_split)] = 0 # turn NA into 0
+            vcf_multi_alt_split[is.na(vcf_multi_alt_split)] = 0 # turn NA into 0
         }
         ####
         
+        # FILTER 1: if the genetype of a given variant in the parental strain has missing values ("."), remove the variant
+        print(paste(dim(vcf_split)[1], ": number of variant sites that have one alternative allele", sep=""))
+        write(paste(dim(vcf_split)[1], ": number of variant sites that have one alternative allele", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        
+        gt_missing <- "\\."
+        vcf_filter1 <- vcf_split
+        gt_missing_l <- grepl(pattern = gt_missing, vcf_filter1[,paste(names_par,"_GT",sep="")]) # Logical vector of where the parental genotype is missing
+        vcf_filter1 <- vcf_filter1[!gt_missing_l,] # Remove variants in which the genotype of the parental strain are missing
+        
+        print(paste(dim(vcf_filter1)[1], ": remaining variants after removing sites where the parental strain has zero read coverage (filter 1).", sep=""))
+        write(paste(dim(vcf_filter1)[1], ": remaining variants after removing sites where the parental strain has zero read coverage (filter 1).", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        
+        # FILTER 2 : genotype filter
+        # Allowed genotypes : "0/0", "0/1", "1/1". 
+        gt_ <- "\\./\\.|0/0|0/1|1/1"
+        gt_l <- logical(length = dim(vcf_filter1)[1])
+        for(n_ in paste(names_all,"_GT",sep="")){
+            gt_tmp <- grepl(pattern = gt_, vcf_filter1[, n_]) 
+            gt_l <- gt_l + gt_tmp
+        }
+        gt_l <- gt_l == length(names_all)
+        vcf_filter2 <- vcf_filter1[gt_l,]
+        
+        print(paste(dim(vcf_filter2)[1], ": remaining variants after filter 2 (genotype filter).", sep=""))
+        write(paste(dim(vcf_filter2)[1], ": remaining variants after filter 2 (genotype filter). Allowed genotypes : ., 0/0, 0/1, 1/1", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        
+        
         # FILTER 3.1 : the proportion of reads support the reference allele at a given variant should be >= ref_thld or <= var_thld.
-        ref_freq <- dplyr::select(vcf_filter2_split, contains("ref_freq")) # columns of ref_freq
+        ref_freq <- dplyr::select(vcf_filter2, contains("ref_freq")) # columns of ref_freq
         ref_freq_n <- colnames(ref_freq)
-        # All strains have freqency >= ref_thld (default=0.8) or frequency <= var_thld (default=0.2).
-        vcf_filter3_1 <- vcf_filter2_split[rowSums((ref_freq <= var_thld | ref_freq >= ref_thld | (ref_freq>=0.4 & ref_freq<=0.6))) == dim(ref_freq)[2],]
+        # All strains have freqency >= ref_thld (default=0.8), <= var_thld (default=0.2) or between 0.4~0.6.
+        vcf_filter3_1 <- vcf_filter2[rowSums((ref_freq <= var_thld | ref_freq >= ref_thld | (ref_freq>=0.4 & ref_freq<=0.6))) == dim(ref_freq)[2],]
         
         print(paste(dim(vcf_filter3_1)[1], ": remaining variants after filter 3.1 (frequency filter).", sep=""))
         write(paste(dim(vcf_filter3_1)[1], ": remaining variants after filter 3.1 (frequency filter)", sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
         
         #### variants with >= two alternative alleles
-        if(dim(vcf_filter2_fail_split)[1]>0){
-            alt_freq <- dplyr::select(vcf_filter2_fail_split, contains("_freq")) # columns of ref_freq
+        if(dim(vcf_multi_alt)[1]>0){
+            alt_freq <- dplyr::select(vcf_multi_alt_split, contains("_freq")) # columns of ref_freq
             alt_freq_n <- colnames(alt_freq)
             # All strains have freqency >= ref_thld (default=0.8) or frequency <= var_thld (default=0.2).
-            vcf_filter2_fail_split <- vcf_filter2_fail_split[rowSums((alt_freq <= var_thld | alt_freq >= ref_thld)) == dim(alt_freq)[2],]
+            vcf_multi_alt_split <- vcf_multi_alt_split[rowSums((alt_freq <= var_thld | alt_freq >= ref_thld)) == dim(alt_freq)[2],]
         }
         ####
         
@@ -253,11 +257,11 @@ snv_chr2 <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL,
         
         #### variants with >= two alternative alleles
         vcf_multiple_alt <- c()
-        if(dim(vcf_filter2_fail_split)[1]>0){
+        if(dim(vcf_multi_alt_split)[1]>0){
             
-            alt_freq <- dplyr::select(vcf_filter2_fail_split, contains("_freq"))
+            alt_freq <- dplyr::select(vcf_multi_alt_split, contains("_freq"))
             alt_freq_par <- dplyr::select(alt_freq, contains(names_par)) # frequency of the reference allele in the parental strain
-            depth_ <- dplyr::select(vcf_filter2_fail_split,contains("_DP"))
+            depth_ <- dplyr::select(vcf_multi_alt_split,contains("_DP"))
             depth_par <- dplyr::select(depth_,contains(names_par)) # read depth in the parental strain
             
             for(n_ in names_mut){
@@ -267,7 +271,7 @@ snv_chr2 <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL,
                 freq_diff_l <- rowSums(freq_diff_l) == length(col_)
                 read_depth_l <- depth_par >= read_depth & depth_tmp >= read_depth # the read depth threshold
                 pass_ <- freq_diff_l & read_depth_l # variants that pass both the frequency difference and read depth threshold
-                vcf_filter_tmp <- vcf_filter2_fail_split[pass_,]
+                vcf_filter_tmp <- vcf_multi_alt_split[pass_,]
                 
                 if(dim(vcf_filter_tmp)[1] > 0) {
                     # Add a column with strain names
