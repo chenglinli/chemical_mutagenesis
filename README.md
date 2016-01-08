@@ -8,7 +8,7 @@ These scripts written in R are genetic variant annotation tools for _Dictyosteli
 This section will walk you through the steps and tools to generate a VCF file (.vcf) that is compatible with these scripts. If you create a VCF file by using different tools, you may encounter unexpected errors. For more information about the VCF file, please read the [document](http://gatkforums.broadinstitute.org/discussion/1268/what-is-a-vcf-and-how-should-i-interpret-it). 
 
 **1. Align the sequence reads**  
-First, you will align the whole-genome sequence data (.bam files) to the reference genome (mask the duplication on chromosome 2 from 3016083 to 3768654) by the BWA (0.7.5a). The chromosome 2 duplication region will be addressed later. If you use Bowtie to align your sequence reads, you may have to run `java -jar GenomeAnalysisTK.jar -T PrintReads -R reference.fa -I input.bam -o output.bam -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60` to covert the quality score before variant calling.
+First, you will align the whole-genome sequence data (.bam files) to the reference genome (mask the duplication in the chromosome 2 from 3016083 to 3768654) by the BWA (0.7.5a). The chromosome 2 duplication region will be addressed later. If you use Bowtie to align your sequence reads, you may have to run `java -jar GenomeAnalysisTK.jar -T PrintReads -R reference.fa -I input.bam -o output.bam -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60` to covert the quality score before variant calling.
 
 **2. Mark duplicated reads**  
 You will use the `MarkDuplicates` in the picard-tools (version 1.119) to mark duplicated reads. These duplicated reads will later be excluded from the variant calling.
@@ -165,19 +165,19 @@ mutation | Mutation type. Intergenic,	intronic,	splice_donor,	splice_acceptor,	s
 
 
 ## Part III: Chromosome 2 duplication
-In the Part I & II, we treat the Dictyostelium genome exluding the chromosome 2 duplication as a haploidy. In Part III, we will do variant calling, filtering and annotation on chromosome 2 duplication region by considering it as a diploidy. All the steps are basically the same as the Part I & II. The differences are adding the arguments `-ploidy 2 -L chr2:2263132-3015703` during vairant calling and use the R scripts (`snv_chr2.R` and `indel_chr2.R`) for filtering and annotation.
+In the Part I & II, we treat the Dictyostelium genome exluding the chromosome 2 duplication as a haploidy. In Part III, we will do variant calling, filtering and annotation in the chromosome 2 duplication region by considering it as a diploidy. All the steps are basically the same as the Part I & II. The differences are adding the arguments `-ploidy 2 -L chr2:2263132-3015703` during vairant calling and use the R scripts (`snv_chr2.R` and `indel_chr2.R`) for filtering and annotation.
 
 **1. Variant calling** 
-**The VCF file contains single nucleotide variants (SNVs) on the chromosome 2 duplication**  
-Calling SNVs for a diploid genome (There are two copies of each gene in the chromosome 2 duplication). You will later use the  `snv_chr2.R` to filter and annotate the VCF file.
+**The VCF file contains single nucleotide variants (SNVs) in the chromosome 2 duplication**  
+Calling SNVs in the chromosome 2 duplication region. You will later use the `snv_chr2.R` to filter and annotate the VCF file.
 ```
 java -jar gatk_directory/GenomeAnalysisTK.jar -T UnifiedGenotyper -glm SNP -R reference_fasta_file -I input1.bam [-I input2.bam ...] -o snv_chr2.vcf -stand_call_conf 30 -ploidy 2 -L chr2:2263132-3015703
 ```
 
-**The VCF file contains indels on the chromosome 2 duplication**  
-Calling indels for a diploid genome (There are two copies of each gene in the chromosome 2 duplication). You will later use the  `indel_chr2.R` to filter and annotate the VCF file.
+**The VCF file contains indels in the chromosome 2 duplication**  
+Calling indels in the chromosome 2 duplication region. You will later use the  `indel_chr2.R` to filter and annotate the VCF file.
 ```
-java -jar gatk_directory/GenomeAnalysisTK.jar -T UnifiedGenotyper  -glm INDEL -R reference_fasta_file -I input1.bam [-I input2.bam ...] -o indel_chr2.vcf -stand_call_conf 30 -ploidy 2 -L chr2:2263132-3015703
+java -jar gatk_directory/GenomeAnalysisTK.jar -T UnifiedGenotyper -glm INDEL -R reference_fasta_file -I input1.bam [-I input2.bam ...] -o indel_chr2.vcf -stand_call_conf 30 -ploidy 2 -L chr2:2263132-3015703
 ```
 
 No example is provided for this part.
