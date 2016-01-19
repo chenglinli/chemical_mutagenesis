@@ -1,5 +1,5 @@
-input_file = ../_ploidy_1/test/example_snv.vcf
-parental_strain = AX4
+input_file = ../_ploidy_1/test/examples/example_snv.vcf
+parental_strain = AX
 mutant_strain = mutant
 freq_diff = 0.8
 read_depth = 5
@@ -33,5 +33,5 @@ The number of splice acceptor site mutations: 2
 The number of intergenic mutations: 10
 The number of mutations in non-coding genes: 2
 
-Start time = 2016-01-07 18:29:06
-End time = 2016-01-07 18:29:21
+Start time = 2016-01-18 23:40:02
+End time = 2016-01-18 23:40:19

@@ -14,7 +14,7 @@ if (!require("stringr")) install.packages("stringr")
 
 
 snv <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL, mutant_strain = NULL,
-                         read_depth = 5, var_thld = 0.2, ref_thld = 0.8, freq_diff = 0.8){
+                         read_depth = 5, var_thld = 0.2, ref_thld = 0.8, freq_diff = 0.8, ...){
     for(rd in read_depth){
         read_depth = rd
         # input_file: file path of the vcf file (e.g. input_file = "./test.vcf")
@@ -677,12 +677,24 @@ snv <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL, muta
             } else { write("No mutation on gene",paste(out_dir,"/","summary.txt",sep=""), append=T)
             }
             write.table(var_filtered_concise, paste(out_dir,"/","variant_filtered.txt",sep=""), sep="\t", quote=F, row.names=F)
+       
+            #vcf file for IGV viewer
+            vcf_one_alt_idx = paste(vcf_one_alt$CHROM,vcf_one_alt$POS, sep=":")
+            var_filtered_concise_idx = paste(var_filtered_concise$CHROM,var_filtered_concise$POS, sep=":")
+            var_filtered_concise_idx = unique(var_filtered_concise_idx)
+            idx = grep(paste(var_filtered_concise_idx,collapse = "|"),vcf_one_alt_idx)
+            vcf_one_alt = vcf_one_alt[idx,]; names(vcf_one_alt)[1] = "#CHROM"
+            vcf_version <- readLines(input_file,n = 1)
+            writeLines(vcf_version,con =  paste(out_dir,"/","variants.vcf",sep=""))
+            write.table(vcf_one_alt, paste(out_dir,"/","variants.vcf",sep=""), sep="\t", quote=F, row.names=F,append = T)
         }    
+       
         EndTime = Sys.time()
         print(EndTime-StartTime) # Running time
         write("", paste(out_dir, "/", "summary.txt",sep=""), append=T)
         write(paste("Start time = ", StartTime, sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
         write(paste("End time = ", EndTime, sep=""),paste(out_dir,"/","summary.txt",sep=""), append=T)
+        
         
     }
 }    
