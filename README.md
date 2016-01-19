@@ -88,8 +88,8 @@ Codon	AA	Number	freq	freq_abs
 GCA	Ala	109859	1.67	1.668609801
 ```
 
-**2. Applying the scripts to your VCF files** 
-You will find the R scripts in the folder `/R`, exmaple files in the folder `/examples` and the raw vairant calling results from genetic screens performed in Dictyostelium in the folder `/data`.
+**2. Applying the scripts to your VCF files**   
+You will find the R scripts in the folder `/R`, exmaple files in the folder `/examples` and the raw vairant calling results from genetic screens performed in Dictyostelium in the folder `/data`.  
 Here is an exmaple of applying the `snv.R` in the folder `/R` to filter and annotate the `snv.vcf` in the folder `/examples`. The VCF file contains 39 SNVs as a result of whole-genome SNVs calling. First, let's take a look of the `snv.vcf`. If you are not familiar with the format, please read the [document](http://gatkforums.broadinstitute.org/discussion/1268/what-is-a-vcf-and-how-should-i-interpret-it)
 
 ```
