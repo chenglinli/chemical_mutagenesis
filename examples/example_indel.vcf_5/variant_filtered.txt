@@ -1,0 +1,3 @@
+CHROM	POS	ID	REF	ALT	QUAL	FILTER	MQ	QD	strain_id	ddb_g	genename	description	start	end	strand	dna_change	indel	mutation	splice_variant	other_splice_variant
+chr3	1858452	.	TGTAGTTGTTGTTGTATTG	T	988.66	.	59.6	16.48	mutant01	DDB_G0279263	DDB_G0279263	NA	1857138	1859575	-	TGTAGTTGTTGTTGTATTG>T	deletion	exonic	DDB0306910	NA
+chr2	4601564	.	TATC	T	1008.66	.	59.78	27.38	mutant05	DDB_G0274947	DDB_G0274947	NA	4598646	4603284	-	TATC>T	deletion	exonic	DDB0348680	NA

@@ -1,0 +1,37 @@
+input_file = ../_ploidy_1/test/example_snv.vcf
+parental_strain = AX4
+mutant_strain = mutant
+freq_diff = 0.8
+read_depth = 5
+var_thld =  0.2
+ref_thld =  0.8
+
+88: total number of variant sites before filtering
+87: number of variant sites that have one alternative allele
+86: remaining variants after removing sites where the parental strain has zero read coverage (filter 1).
+86: remaining variants after filter 2 (genotype filter). Allowed genotypes : ., 0, 1.
+66: remaining variants after filter 3.1 (frequency filter)
+42: remaining variants after filter 3.2 (freq_diff & read_depth filters).
+1: variants with multiple alternative alleles that pass filter 3.2 (freq_diff & read_depth filters).
+
+The total number of GAorTC mutations in genic region = 22
+The total number of other types of mutations in genic region = 4
+The total number of GAorTC mutations in intergenic region = 7
+The total number of other types of mutations in intergenic region = 3
+The total number of GAorTC mutations in non-coding genes = 2
+The total number of other types of mutations in non-coding genes = 0
+The total number of GAorTC mutations = 35
+The total number of other types of mutations = 7
+
+Annotating variant_filtered.txt
+The number of synonymous mutations: 3
+The number of missense mutations: 18
+The number of nonsense mutations: 4
+The number of intronic mutations (not including splite donor or acceptor sites): 1
+The number of splice donor site mutations: 2
+The number of splice acceptor site mutations: 2
+The number of intergenic mutations: 10
+The number of mutations in non-coding genes: 2
+
+Start time = 2016-01-07 18:29:06
+End time = 2016-01-07 18:29:21
