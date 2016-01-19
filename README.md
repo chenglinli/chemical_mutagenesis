@@ -88,8 +88,9 @@ Codon	AA	Number	freq	freq_abs
 GCA	Ala	109859	1.67	1.668609801
 ```
 
-**2. Applying the scripts to your VCF files**  
-Here is an exmaple of applying the `snv.R` to filter and annotate the `example_snv.vcf`. The VCF file contains 39 SNVs as a result of whole-genome SNVs calling. First, let's take a look of the `example_snv.vcf`. If you are not familiar with the format, please read the [document](http://gatkforums.broadinstitute.org/discussion/1268/what-is-a-vcf-and-how-should-i-interpret-it)
+**2. Applying the scripts to your VCF files** 
+You will find the R scripts in the folder `/R`, exmaple files in the folder `/examples` and the raw vairant calling results from genetic screens performed in Dictyostelium in the folder `/data`.
+Here is an exmaple of applying the `snv.R` in the folder `/R` to filter and annotate the `snv.vcf` in the folder `/examples`. The VCF file contains 39 SNVs as a result of whole-genome SNVs calling. First, let's take a look of the `snv.vcf`. If you are not familiar with the format, please read the [document](http://gatkforums.broadinstitute.org/discussion/1268/what-is-a-vcf-and-how-should-i-interpret-it)
 
 ```
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	AX4	mutant01	mutant02	mutant03	mutant04	mutant05	mutant06
@@ -99,10 +100,10 @@ chr6	773798	.	A	G	5181.7	.	AC=1...	GT:AD:DP:GQ:PL	0:68,0:68:99:0,2891	...
 The parental strain is the "AX4". Mutant strains is named "mutant01" to "mutant06". To filter and annotate the SNVs. You will run the following commands in R.
 ```
 source("/path_to_the_folder/snv.R")
-snv(input_file = "/path_to_the_folder/example_snv.vcf", ref_file = "/path_to_the_folder_of_reference_files/", parental_strain = "AX4", mutant_strain = "mutant")
+snv(input_file = "/path_to_the_folder/snv.vcf", ref_file = "/path_to_the_folder_of_reference_files/", parental_strain = "AX4", mutant_strain = "mutant")
 ```
 
-The script creates a new folder `example_snv.vcf_5`. The suffix `5` indicates that SNVs with a coverage < 5 reads will be filtered out. You can change the threshold by adding the argument `read_depth = 5` in the function `snv()`. The script generates an output folder containing 8 files.
+The script creates a new folder `/snv.vcf_5`. The suffix `5` indicates that SNVs with a coverage < 5 reads will be filtered out. You can change the threshold by adding the argument `read_depth = 5` in the function `snv()`. The script generates an output folder containing 8 files.
 
 **File name** | **Description** 
 --- | --- 
@@ -130,9 +131,9 @@ mutant_strain = mutant
 1: variants with multiple alternative alleles that pass filter 3.2 (freq_diff & read_depth filters).
 ...
 ```
-In brief, there are 88 SNVs before filtering. One SNVs did not pass the filters because it contains multiple alternative alleles. 42 SNVs pass all filters (36 SNVs are found in one mutant and 3 SNVs are found in two mutants, 36 + 3*2 = 42). The 42 SNVs are listed in the `variant_filtered.txt`. The results can be found in the folder `example_snv.vcf_5`.
+In brief, there are 88 SNVs before filtering. One SNVs did not pass the filters because it contains multiple alternative alleles. 42 SNVs pass all filters (36 SNVs are found in one mutant and 3 SNVs are found in two mutants, 36 + 3*2 = 42). The 42 SNVs are listed in the `variant_filtered.txt`. The results can be found in the folder `/snv.vcf_5`.
 
-Similarly, you can apply the `indel.R` to filter and annotate the `example_indel.vcf`. The `example_indel.vcf` contains 90 indels but only 2 of them pass the filters. No variant with multiple alternative alleles are found. The results can be found in the folder `example_indel.vcf_5`.  
+Similarly, you can apply the `indel.R` in the folder `/R` to filter and annotate the `indel.vcf` in the folder `/examples`. The `indel.vcf` contains 90 indels but only 2 of them pass the filters. No variant with multiple alternative alleles are found. The results can be found in the folder `indel.vcf_5`.  
   
 In the variant_filtered.txt, description of the columns can be found in the following table. The symbol **NA** in the file means a value is not available.  
 
