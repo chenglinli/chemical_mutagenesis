@@ -109,8 +109,8 @@ The script creates a new folder `example_snv.vcf_5`. The suffix `5` indicates th
 summary.txt | Summarize the input parameters and results.
 variants.vcf | A genome VCF file of variants that passed the filters. You can view this file in the Integrative Genomics Viewer (IGV).
 variant_filtered.txt | A data frame of variants that passed the filters.
-variant_mult_alt.txt | The variants that contain more than two alternative variants. These SNVs are likely false positive but saved in the file just in case.
-gene_list_all.txt | Genes that are mutated.
+variant_mult_alt.txt | A data frame of variants that contain more than two alternative alleles. These vairants are likely to be false positives.
+gene_list_all.txt | Genes that are mutated at least once.
 gene_list_top.txt | Genes that are mutated at least twice.
 mutations_by_chr.txt |  List mutations in individual chromosomes.
 mutations_by_strain.txt |  List mutations in individual strains.
