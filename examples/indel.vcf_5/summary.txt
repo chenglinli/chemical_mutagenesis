@@ -1,5 +1,5 @@
-input_file = ../_ploidy_1/test/examples/example_indel.vcf
-parental_strain = AX
+input_file = ../_ploidy_1/test/examples/indel.vcf
+parental_strain = AX4
 mutant_strain = mutant
 freq_diff = 0.8
 read_depth = 5
@@ -21,5 +21,5 @@ No variant satisfies the filter 3.2 (freq_diff & read_depth filters) in: mutant0
 The number of insertion mutations: 0
 The number of deletion mutations: 2
 
-Start time = 2016-01-18 23:40:29
-End time = 2016-01-18 23:40:37
+Start time = 2016-01-19 13:49:01
+End time = 2016-01-19 13:49:09
