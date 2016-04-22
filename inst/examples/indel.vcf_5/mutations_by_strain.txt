@@ -1,7 +1,0 @@
-strain_id	intergenic	intronic	splice_donor	splice_acceptor	exonic	NCG	total
-mutant01	0	0	0	0	1	0	1
-mutant02	0	0	0	0	0	0	0
-mutant03	0	0	0	0	0	0	0
-mutant04	0	0	0	0	0	0	0
-mutant05	0	0	0	0	1	0	1
-mutant06	0	0	0	0	0	0	0

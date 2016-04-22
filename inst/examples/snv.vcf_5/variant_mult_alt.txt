@@ -1,2 +1,0 @@
-CHROM	POS	ID	REF	ALT1	ALT2	QUAL	FILTER	MQ	QD	strain_id	start	end	strand	ddb_g	genename	description
-chr1	550412	.	A	C	T	819.12	.	52.83	32.76	mutant06	NA	NA	NA	NA	NA	NA

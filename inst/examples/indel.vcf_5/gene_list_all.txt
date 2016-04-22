@@ -1,3 +1,0 @@
-genename	chromosome	start	end	strand	ddb_g	description	snp_occurrence	var_count	strain_count	indel_count	exonic	intronic	splice_donor	splice_acceptor	NCG
-DDB_G0274947	chr2	4598646	4603284	-	DDB_G0274947	NA	1	1	1	1	1	0	0	0	0
-DDB_G0279263	chr3	1857138	1859575	-	DDB_G0279263	NA	1	1	1	1	1	0	0	0	0
