@@ -1,0 +1,25 @@
+input_file = ../_ploidy_1/test/examples/indel.vcf
+parental_strain = AX4
+mutant_strain = mutant
+freq_diff = 0.8
+read_depth = 5
+var_thld =  0.2
+ref_thld =  0.8
+
+90: total number of variant sites before filtering
+89: number of variant sites that have one alternative allele
+86: remaining variants after removing sites where the parental strain has zero read coverage (filter 1).
+86: remaining variants after filter 2 (genotype filter). Allowed genotypes : ., 0, 1.
+67: remaining variants after filter 3.1 (frequency filter)
+No variant satisfies the filter 3.2 (freq_diff & read_depth filters) in: mutant02
+No variant satisfies the filter 3.2 (freq_diff & read_depth filters) in: mutant03
+No variant satisfies the filter 3.2 (freq_diff & read_depth filters) in: mutant04
+No variant satisfies the filter 3.2 (freq_diff & read_depth filters) in: mutant06
+2: remaining variants after filter 3.2 (freq_diff & read_depth filters).
+: variants with multiple alternative alleles that pass filter 3.2 (freq_diff & read_depth filters).
+
+The number of insertion mutations: 0
+The number of deletion mutations: 2
+
+Start time = 2016-01-19 13:49:01
+End time = 2016-01-19 13:49:09

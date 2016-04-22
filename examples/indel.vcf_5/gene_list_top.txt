@@ -1,1 +1,0 @@
-genename	chromosome	start	end	strand	ddb_g	description	snp_occurrence	var_count	strain_count	indel_count	exonic	intronic	splice_donor	splice_acceptor	NCG

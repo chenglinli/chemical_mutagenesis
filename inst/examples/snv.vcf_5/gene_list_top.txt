@@ -1,0 +1,2 @@
+genename	chromosome	start	end	strand	ddb_g	description	snp_occurrence	var_count	strain_count	GAorTC	synonymous	missense	nonsense	intronic	splice_donor	splice_acceptor	NCG
+hemA	chr3	3708667	3710631	-	DDB_G0280763	catalyzes the reaction succinyl-CoA %2B glycine %3D 5-aminolevulinate %2B CoA %2B CO%3Csub%3E2%3C%2Fsub%3E	4	4	4	4	0	4	0	0	0	0	0
