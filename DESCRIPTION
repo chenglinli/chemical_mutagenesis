@@ -5,5 +5,13 @@ Version: 1.0
 Date: 2016-04-21
 Author: Cheng-Lin Frank Li
 Maintainer: Cheng-Lin Frank Li <chenglinfli@gmail.com>
+imports:
+	IRanges
+	Rsamtools
+	dplyr
+	reshape2
+	seqinr
+	tidyr
+	stringr
 Description: Genetic variant annotation tools for Dictyostelium, designed for filtering and annotating the variant calling output (.vcf file) of the GATK UnifiedGenotyper (version 3.4-46).
 License: MIT licence

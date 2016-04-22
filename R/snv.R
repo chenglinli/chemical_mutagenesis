@@ -1,18 +1,6 @@
 # V3.0
 # Condiser variants with more than two alternative alleles
 
-# Check required packages, and install them if they are missing.
-if (!require("Rsamtools")) {
-    source("https://bioconductor.org/biocLite.R")
-    biocLite("Rsamtools")
-}
-if (!require("seqinr")) install.packages("seqinr")
-if (!require("dplyr")) install.packages("dplyr")
-if (!require("reshape2")) install.packages("reshape2")
-if (!require("tidyr")) install.packages("tidyr")
-if (!require("stringr")) install.packages("stringr")
-
-
 snv <- function(input_file = NULL, ref_file = system.file("extdata", package="chemut"), parental_strain = NULL, mutant_strain = NULL,
                          read_depth = 5, var_thld = 0.2, ref_thld = 0.8, freq_diff = 0.8, ...){
     for(rd in read_depth){
@@ -28,13 +16,7 @@ snv <- function(input_file = NULL, ref_file = system.file("extdata", package="ch
         ## the mutant strain should differ >= freq_diff (default value = 0.8).
         
         StartTime = Sys.time()
-        
-        library("Rsamtools") # GRanges
-        library("dplyr")
-        library("reshape2")
-        library("seqinr")
-        library("tidyr")
-        library("stringr")
+
         # Check input parameters
         if(is.null(input_file)) {print("Please specify the path of input_file")}
         if(is.null(parental_strain)) {"Please specify the name of the parental strain"}

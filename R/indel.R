@@ -1,19 +1,7 @@
 # V3.0
 # Condiser variants with more than two alternative alleles
 
-# Check required packages, and install them if they are missing.
-if (!require("Rsamtools")) {
-    source("https://bioconductor.org/biocLite.R")
-    biocLite("Rsamtools")
-}
-if (!require("seqinr")) install.packages("seqinr")
-if (!require("dplyr")) install.packages("dplyr")
-if (!require("reshape2")) install.packages("reshape2")
-if (!require("tidyr")) install.packages("tidyr")
-if (!require("stringr")) install.packages("stringr")
-
-
-indel <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL, mutant_strain = NULL,
+indel <- function(input_file = NULL, ref_file = system.file("extdata", package="chemut"), parental_strain = NULL, mutant_strain = NULL,
                          read_depth = 5, var_thld = 0.2, ref_thld = 0.8, freq_diff= 0.8){
     for(rd in read_depth){
         read_depth = rd
@@ -29,12 +17,6 @@ indel <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL, mu
         
         StartTime = Sys.time()
         
-        library("Rsamtools") # GRanges
-        library("dplyr")
-        library("reshape2")
-        library("seqinr")
-        library("tidyr")
-        library("stringr")
         # Check input parameters
         if(is.null(input_file)) {print("Please specify the path of input_file")}
         if(is.null(parental_strain)) {"Please specify the name of the parental strain"}
@@ -74,7 +56,7 @@ indel <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL, mu
         names_all <- c(names_par,names_mut) # A vector contains names of all strains
         
         # Load the gene position data, which contains the details of each gene (chromosome, gene_start, gene_stop and strand).
-        dd_gene_pos <- read.table(paste(ref_file,"gene_09-26-2015.txt",sep=""), sep="\t", header=T, stringsAsFactors = FALSE)
+        dd_gene_pos <- read.table(file.path(ref_file, "gene_09-26-2015.txt.gz"), sep="\t", header=T, stringsAsFactors = FALSE)
         dd_gene_pos <- dd_gene_pos[grep("DDB_G", dd_gene_pos$ddb_g),]
         dd_gr <- GenomicRanges::GRanges(dd_gene_pos$chromosome, IRanges(start = dd_gene_pos$start, end = dd_gene_pos$end))
         
@@ -355,11 +337,11 @@ indel <- function(input_file = NULL, ref_file = NULL, parental_strain = NULL, mu
             
             
             # ANNOTATING variants (MISENSE, NONSENSE, INTRONIC or INTERGENIC mutations)
-            dd_pri_cds <- seqinr::read.fasta(paste(ref_file,"dicty_primary_cds.txt",sep=""), set.attributes = F)
-            dd_gff <- read.table(paste(ref_file,"cds_09-26-2015.gff",sep=""), sep="\t", header=T)
-            dd_splice_d <- read.table(paste(ref_file,"splice_donor.gff",sep=""), sep="\t", header=T)
+            dd_pri_cds <- seqinr::read.fasta(file.path(ref_file,"dicty_primary_cds.txt.gz"), set.attributes = F)
+            dd_gff <- read.table(file.path(ref_file, "cds_09-26-2015.gff.gz"), sep="\t", header=T)
+            dd_splice_d <- read.table(file.path(ref_file, "splice_donor.gff.gz"), sep="\t", header=T)
             dd_sd <- GRanges(dd_splice_d$chromosome, IRanges(start = dd_splice_d$start, end = dd_splice_d$end))
-            dd_splice_a <- read.table(paste(ref_file,"splice_acceptor.gff",sep=""), sep="\t", header=T)
+            dd_splice_a <- read.table(file.path(ref_file,"splice_acceptor.gff.gz"), sep="\t", header=T)
             dd_sa <- GRanges(dd_splice_a$chromosome, IRanges(start = dd_splice_a$start, end = dd_splice_a$end))
             
             
