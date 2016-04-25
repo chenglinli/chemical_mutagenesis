@@ -1,20 +1,38 @@
-# V3.0
-# Condiser variants with more than two alternative alleles
-
+#' Annotate Indels
+#'
+#' @param input_file file path of the vcf file (e.g. input_file = "./test.vcf")
+#' @param parental_strain the name of the parental strain. The name should not contain -. (e.g. parental_strain = "par")
+#' @param mutant_strain please use a prefix to name mutant strains. Specify the common prefix here (e.g. mutant_strain = "mut" given mutant strains named as mut1, mut2, etc.)
+#' @param read_depth at a given variant, the read depth (coverage) must be >= read_depth. Default value = 5.
+#' @param var_thld if the reference allele was detected in <= var_thld (default value = 0.2) of the reads, it is
+#'                  considered as having a variant allele.
+#' @param ref_thld if the reference allele was detected in >= ref_thld (default value = 0.8) of the reads, it is 
+#'                 considered as having a reference allele.
+#' @param freq_diff at a given variant, the porportion of reads supports the reference allele in the parental
+#'                     and the mutant strain should differ >= freq_diff (default value = 0.8).
+#'
+#' @return None
+#'
+#' @author Cheng-Lin Frank Li, \email{chenglinfli@gmail.com}
+#'
+#' @examples
+#' indel(input_file = "/path_to_the_folder/snv.vcf", ref_file = "/path_to_the_folder_of_reference_files/",
+#'      parental_strain = "AX4", mutant_strain = "mutant")
+#'
+#' @export
+#' @import Rsamtools
+#' @import IRanges
+#' @import GenomicRanges
+#' @importFrom seqinr read.fasta comp translate
+#' @importFrom dplyr select mutate filter
+#' @importFrom tidyr separate
+#' @importFrom reshape2 colsplit
+#' @importFrom stringr str_count
+#'
 indel <- function(input_file = NULL, ref_file = system.file("extdata", package="chemut"), parental_strain = NULL, mutant_strain = NULL,
                          read_depth = 5, var_thld = 0.2, ref_thld = 0.8, freq_diff= 0.8){
     for(rd in read_depth){
-        read_depth = rd
-        # input_file: file path of the vcf file (e.g. input_file = "./test.vcf")
-        # parental_strain: the name of the parental strain. The name should not contain -. (e.g. parental_strain = "par")
-        # mutant_strain: please use a prefix to name mutant strains. Specify the common prefix here
-        ## (e.g. mutant_strain = "mut" given mutant strains named as mut1, mut2, etc.)
-        # read_depth: at a given variant, the read depth (coverage) must be >= read_depth. Default value = 5.
-        # var_thld: if the reference allele was detected in <= var_thld (default value = 0.2) of the reads, it is considered as having a variant allele.
-        # ref_thld: if the reference allele was detected in >= ref_thld (default value = 0.8) of the reads, it is considered as having a reference allele.
-        # freq_diff:  at a given variant, the porportion of reads supports the reference allele in the parental and 
-        ## the mutant strain should differ >= freq_diff (default value = 0.8).
-        
+        read_depth = rd    
         StartTime = Sys.time()
         
         # Check input parameters
