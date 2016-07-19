@@ -20,7 +20,7 @@ snv(input_file = NULL, ref_file = system.file("extdata", package =
 \item{var_thld}{if the reference allele was detected in <= var_thld (default value = 0.2) of the reads, it is
 considered as having a variant allele.}
 
-\item{ref_thld}{if the reference allele was detected in >= ref_thld (default value = 0.8) of the reads, it is 
+\item{ref_thld}{if the reference allele was detected in >= ref_thld (default value = 0.8) of the reads, it is
 considered as having a reference allele.}
 
 \item{freq_diff}{at a given variant, the porportion of reads supports the reference allele in the parental
