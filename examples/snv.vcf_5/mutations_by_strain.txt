@@ -1,7 +1,0 @@
-strain_id	intergenic	intronic	splice_donor	splice_acceptor	synonymous	missense	nonsense	NCG	total
-mutant01	2	0	0	0	1	3	2	1	9
-mutant02	4	0	0	0	0	3	2	0	9
-mutant03	0	0	0	0	0	1	0	0	1
-mutant04	3	0	0	0	1	4	0	0	8
-mutant05	1	0	2	2	0	6	0	1	12
-mutant06	0	1	0	0	1	1	0	0	3
